@@ -12,6 +12,9 @@ A lightweight automation tool for qBittorrent, designed to automatically pause t
 ## How It Works
 `pausarr` connects to your qBittorrent instance and periodically checks all uploading torrents. If a torrent exceeds the configured maximum ratio or maximum seeding duration, and does not have the `no-pause` tag, it will be paused. Torrents from private trackers can be excluded from pausing.
 
+## Tag Exclusion
+Torrents tagged with `no-pause` will be ignored by the automation and will not be paused, regardless of their ratio or seed time.
+
 ## Environment Variables
 The application is configured via environment variables. These can be set in your `.env` file or directly in your Docker configuration.
 
@@ -36,9 +39,42 @@ SKIP_PRIVATE_TRACKERS=true
 CHECK_INTERVAL_MINUTES=10
 ```
 
+## Docker Images from GHCR
+
+Official images are published to GitHub Container Registry (GHCR):
+
+```
+docker pull ghcr.io/felipemarinho97/pausarr:latest
+```
+
+- `latest` is always the most recent build from the default branch.
+- Versioned tags (e.g., `v1.0.0`) are also available if a release is published.
+
+You can use these images directly in your deployments without building locally.
+
+### Example: Running from GHCR
+
+```sh
+docker run --env-file .env --restart unless-stopped ghcr.io/felipemarinho97/pausarr:latest
+```
+
+Or with environment variables inline:
+
+```sh
+docker run -e QBITTORRENT_URL=https://your-qbittorrent.example.com \
+           -e QBITTORRENT_USERNAME=admin \
+           -e QBITTORRENT_PASSWORD=yourpassword \
+           -e MAX_RATIO=2.0 \
+           -e MAX_SEED_HOURS=4320 \
+           -e SKIP_PRIVATE_TRACKERS=true \
+           -e CHECK_INTERVAL_MINUTES=10 \
+           --restart unless-stopped \
+           ghcr.io/felipemarinho97/pausarr:latest
+```
+
 ## Docker Deployment
 
-### 1. Using Docker Compose
+### 1. Using Docker Compose (Recommended)
 
 Create a `docker-compose.yaml` file in your project directory:
 
@@ -46,7 +82,7 @@ Create a `docker-compose.yaml` file in your project directory:
 version: '3.8'
 services:
   pausarr:
-    build: .
+    image: ghcr.io/felipemarinho97/pausarr:latest
     environment:
       - QBITTORRENT_URL=https://your-qbittorrent.example.com
       - QBITTORRENT_USERNAME=admin
@@ -58,23 +94,12 @@ services:
     restart: unless-stopped
 ```
 
-Then build and run the container:
+Then run the container:
 
 ```sh
-docker-compose up --build
+docker-compose up -d
 ```
 
-### 2. Using Docker CLI Directly
-
-You can also run the application directly with Docker:
-
-```sh
-docker build -t pausarr .
-docker run --env-file .env --restart unless-stopped pausarr
-```
-
-## Tag Exclusion
-Torrents tagged with `no-pause` will be ignored by the automation and will not be paused, regardless of their ratio or seed time.
 
 ## Logging
 The application will output logs to stdout, including information about configuration, torrent checks, and actions taken.
